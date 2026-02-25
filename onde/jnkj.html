@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Mini Luta Estilizado</title>
+<style>
+body { margin:0; background:#333; overflow:hidden; font-family:sans-serif; }
+#game { position:relative; width:800px; height:400px; margin:50px auto; background: linear-gradient(to top, #555, #999); border:3px solid #222; overflow:hidden; }
+ 
+.health-bar { position:absolute; height:20px; width:200px; top:10px; overflow:hidden; }
+#health1 { left:10px; background:green; }
+#health2 { right:10px; background:green; }
+.health-bar span { position:absolute; width:100%; text-align:center; top:0; left:0; color:white; font-weight:bold; }
+ 
+#timer { position:absolute; top:40px; left:50%; transform:translateX(-50%); font-size:32px; color:white; font-weight:bold; }
+ 
+#winner { position:absolute; width:100%; top:140px; text-align:center; font-size:48px; color:yellow; display:none; }
+#restartBtn { position:absolute; width:200px; padding:10px; left:50%; transform:translateX(-50%); top:220px; font-size:24px; background:orange; border:none; cursor:pointer; display:none; }
+#restartBtn:hover { background-color:darkorange; }
+ 
+.player, .player2 { position:absolute; bottom:0; width:50px; height:100px; }
+.playerBody { position:absolute; width:50px; height:100px; background:red; border-radius:10px; }
+.playerEyes { position:absolute; top:10px; left:5px; width:40px; height:20px; display:flex; justify-content:space-between; }
+.eye { width:10px; height:10px; background:white; border-radius:50%; }
+.hand { position:absolute; width:20px; height:20px; background:#fdd; border-radius:50%; top:40px; left:30px; transition:all 0.1s; }
+.player2 .playerBody { background:blue; }
+.player2 .hand { left:0; }
+ 
+</style>
+</head>
+<body>
+<div id="game">
+<div id="player" class="player">
+<div class="playerBody"></div>
+<div class="playerEyes">
+<div class="eye"></div><div class="eye"></div>
+</div>
+<div class="hand"></div>
+</div>
+<div id="player2" class="player player2">
+<div class="playerBody"></div>
+<div class="playerEyes">
+<div class="eye"></div><div class="eye"></div>
+</div>
+<div class="hand"></div>
+</div>
+<div id="health1" class="health-bar"><span id="health1-text">200</span></div>
+<div id="health2" class="health-bar"><span id="health2-text">200</span></div>
+<div id="timer">60</div>
+<div id="winner">VITÓRIA!</div>
+<button id="restartBtn">RESTART</button>
+</div>
+ 
+<script>
+const player = document.getElementById("player");
+const playerHand = player.querySelector(".hand");
+const player2 = document.getElementById("player2");
+const player2Hand = player2.querySelector(".hand");
+const health1 = document.getElementById("health1");
+const health2 = document.getElementById("health2");
+const health1Text = document.getElementById("health1-text");
+const health2Text = document.getElementById("health2-text");
+const winner = document.getElementById("winner");
+const restartBtn = document.getElementById("restartBtn");
+const timerDisplay = document.getElementById("timer");
+ 
+let rounds = {p1:0, p2:0};
+let currentRound = 1;
+let timeLeft = 60;
+let frameCount = 0;
+ 
+let p1 = { x:50, y:0, width:50, height:100, health:200, knockback:false, comboCount:0, attackCooldown:0, vy:0 };
+let p2 = { x:700, y:0, width:50, height:100, health:200, knockback:false, vy:0 };
+ 
+const keys = {};
+ 
+document.addEventListener("keydown", e => keys[e.key]=true);
+document.addEventListener("keyup", e => keys[e.key]=false);
+ 
+// Attack function com knockback e combo
+function attack(attacker, defender, hand){
+  if(attacker.knockback || attacker.attackCooldown>0) return;
+  hand.style.transform = 'translateX(20px)';
+  setTimeout(()=>hand.style.transform='translateX(0)',100);
+ 
+  if(Math.abs(attacker.x-defender.x)<60 && Math.abs(attacker.y-defender.y)<50){
+    let knockbackDistance = 20, cooldownTime=20;
+    attacker.comboCount++;
+    if(attacker.comboCount>=4){ knockbackDistance=50; cooldownTime=60; attacker.comboCount=0; }
+    defender.health-=5; if(defender.health<0) defender.health=0;
+ 
+    // Knockback animation
+    defender.knockback=true;
+    let direction=attacker.x<defender.x?1:-1;
+    let steps=10, step=knockbackDistance/steps, count=0;
+    let kbInterval=setInterval(()=>{
+      defender.x+=step*direction;
+      if(defender.x<0) defender.x=0;
+      if(defender.x+defender.width>800) defender.x=800-defender.width;
+      count++;
+      if(count>=steps){ defender.knockback=false; clearInterval(kbInterval);}
+    },16);
+ 
+    attacker.attackCooldown=cooldownTime;
+  }
+}
+ 
+// Update loop
+function update(){
+  frameCount++;
+ 
+  if(p1.attackCooldown>0) p1.attackCooldown--;
+ 
+  // Player 1 movement
+  if(!p1.knockback){
+    if(keys["a"] && p1.x>0) p1.x-=5;
+    if(keys["d"] && p1.x+p1.width<800) p1.x+=5;
+    if(keys["w"] && p1.y===0){ p1.vy=15; }
+    if(keys["s"]) attack(p1,p2,playerHand);
+  }
+ 
+  // Bot AI
+  if(!p2.knockback){
+    let dist=p1.x-p2.x;
+    if(dist>50) p2.x+=3;
+    if(dist<-50) p2.x-=3;
+    if(Math.abs(dist)<60 && frameCount%50===0) attack(p2,p1,player2Hand);
+  }
+ 
+  // Gravity
+  if(p1.y>0 || p1.vy!=0){
+    p1.vy-=1;
+    p1.y+=p1.vy;
+    if(p1.y<0){ p1.y=0; p1.vy=0; }
+  }
+  if(p2.y>0 || p2.vy!=0){
+    p2.vy-=1;
+    p2.y+=p2.vy;
+    if(p2.y<0){ p2.y=0; p2.vy=0; }
+  }
+ 
+  // Update positions
+  player.style.left=p1.x+'px';
+  player.style.bottom=p1.y+'px';
+  player2.style.left=p2.x+'px';
+  player2.style.bottom=p2.y+'px';
+ 
+  // Update health
+  health1.style.width=p1.health+'px';
+  health2.style.width=p2.health+'px';
+  health1Text.innerText=p1.health;
+  health2Text.innerText=p2.health;
+ 
+  // Check round end
+  if(p1.health<=0 || p2.health<=0 || timeLeft<=0){
+    if(p1.health>p2.health || (p2.health<=0 && p1.health>0)) rounds.p1++; 
+    else if(p2.health>p1.health || (p1.health<=0 && p2.health>0)) rounds.p2++;
+    if(rounds.p1>=2 || rounds.p2>=2){
+      winner.innerText=rounds.p1>=2?"PLAYER 1 GANHA!":"INIMIGO GANHA!";
+      winner.style.display="block"; restartBtn.style.display="block";
+      cancelAnimationFrame(animation); return;
+    } else {
+      startNextRound();
+      return;
+    }
+  }
+ 
+  animation=requestAnimationFrame(update);
+}
+ 
+// Timer
+function countDown(){
+  if(timeLeft>0){
+    timeLeft--; timerDisplay.innerText=timeLeft;
+    setTimeout(countDown,1000);
+  }
+}
+ 
+// Restart round
+function startNextRound(){
+  p1={x:50,y:0,width:50,height:100,health:200,knockback:false,comboCount:0,attackCooldown:0,vy:0};
+  p2={x:700,y:0,width:50,height:100,health:200,knockback:false,vy:0};
+  timeLeft=60; timerDisplay.innerText=timeLeft;
+  winner.innerText=`ROUND ${++currentRound}`;
+  winner.style.display="block";
+  setTimeout(()=>{ winner.style.display="none"; countDown(); animation=requestAnimationFrame(update); },1000);
+}
+ 
+// Full restart
+function restartGame(){
+  rounds={p1:0,p2:0}; currentRound=1;
+  startNextRound();
+  restartBtn.style.display="none"; winner.style.display="none";
+}
+ 
+restartBtn.addEventListener("click", restartGame);
+ 
+// Init
+countDown();
+let animation=requestAnimationFrame(update);
+ 
+</script>
+</body>
+</html>
