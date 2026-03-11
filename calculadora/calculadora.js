@@ -29,7 +29,7 @@ function calculadora(){
             }
 
         } else {
-            //escreva algo😎 
+            //escreva algo😎
             alert("Algo de errado não está certo🤔");
             operador_valido = false;
             continua = prompt("Digite sim para continuar ou não para encerrar");
@@ -37,7 +37,7 @@ function calculadora(){
                 return
             }
         }
-        if(operador != "/" || operando2 != 0){
+        if((operador != "/" || operando2 != 0) && operador_valido != false){
         alert("Resultado: " + 
             operando1 + " " + operador + " " + operando2 + " = " + resultado);
         }
