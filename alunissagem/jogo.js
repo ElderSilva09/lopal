@@ -6,11 +6,21 @@
 
 
 //Modelo
+
+let imgFoguete = new Image();
+imgFoguete.src = "foguete_off.png";
+
+let imgFogueteLigado = new Image();
+imgFogueteLigado.src = "foguete_on.png";
+
 let canvas = document.querySelector("#jogo");
 let ctx = canvas.getContext("2d");
-const gravidade = 0.01;
+const gravidade = 0.015;
 let lancamento = (Math.round(Math.random()) == 0);//  Variavel booleana pseudoaleatoria para decidir se o 
 //                                                    módulo lunar começa do lado esquerdo ou direito da tela
+
+let offset = 2 //Posição para pousar o foguete
+
 let estrelas = [];
 for (let i = 0; i < 500; i++){
     estrelas[i] = {
@@ -29,8 +39,8 @@ let moduloLunar = {
         y: 100
     },
     angulo: lancamento ? -Math.PI / 2 : Math.PI / 2,
-    largura: 20,
-    altura: 20,
+    largura: 100,
+    altura: 50,
     cor: "#008080",
     velocidade: {
         x: lancamento ? 2 : -2,
@@ -69,7 +79,7 @@ function mostrarIndicador(mensagem, x, y) {
 
 function mostrarAltitude() {
     mostrarIndicador(
-    `Altitude: ${(canvas.height - moduloLunar.posicao.y - 0.5 * moduloLunar.altura).toFixed(0)}`,
+    `Altitude: ${(canvas.height - moduloLunar.posicao.y - 0.55 * moduloLunar.altura).toFixed(0)} m`,
      400, 
      60,
      
@@ -142,7 +152,18 @@ function desenharModuloLunar() {
     ctx.beginPath();
     ctx.translate(moduloLunar.posicao.x, moduloLunar.posicao.y);
     ctx.rotate(moduloLunar.angulo);
-    ctx.rect(moduloLunar.largura * -0.5, moduloLunar.altura * -0.4,
+
+     let img = moduloLunar.motorLigado ? imgFogueteLigado : imgFoguete;
+
+    ctx.drawImage(
+        img,
+    -moduloLunar.largura / 2,
+    -(moduloLunar.altura * 2) / 2,
+    moduloLunar.largura,
+    moduloLunar.altura * 2
+    );
+
+    /*ctx.rect(moduloLunar.largura * -0.5, moduloLunar.altura * -0.4,
                   moduloLunar.largura, moduloLunar.altura * 1.6);
     ctx.fillStyle = moduloLunar.cor;
     ctx.fill();
@@ -166,10 +187,10 @@ function desenharModuloLunar() {
                   moduloLunar.largura * 1, moduloLunar.altura * 0.1);
         ctx.closePath();
         ctx.fillStyle = 'red'
-        ctx.fill();
+        ctx.fill();*/
     
     if (moduloLunar.motorLigado) {
-        desenharChama();
+        //desenharChama();
         consumirCombustivel();
     }
 
@@ -177,7 +198,7 @@ function desenharModuloLunar() {
     ctx.restore();
 }
 
-function desenharChama() {
+/*function desenharChama() {
         ctx.beginPath();
     //desenhar linha da base do fogo no canto inferior esquerdo do módulo lunar
     ctx.moveTo(moduloLunar.largura * -0.5, moduloLunar.altura * 1.2);
@@ -190,7 +211,7 @@ function desenharChama() {
     ctx.closePath();
     ctx.fillStyle = "orange"; //desenha automaticamente a chama do motor
     ctx.fill();
-}
+}*/
 
 
 function desenharFundo() {
@@ -214,6 +235,7 @@ function desenhar() {
     mostrarAngulo();
     
     if(encerrarJogo()) {
+        moduloLunar.motorLigado = false
         return;
     }
 
@@ -234,7 +256,7 @@ function desenhar() {
 
 
 function encerrarJogo() {
-    if (moduloLunar.posicao.y > canvas.height - moduloLunar.altura * 0.5) {
+    if (moduloLunar.posicao.y > canvas.height - (moduloLunar.altura + offset) * 0.5) {
         if(moduloLunar.velocidade.y <= 0.5 && Math.abs(moduloLunar.velocidade.x) <= 0.5 && Math.abs(moduloLunar.angulo) <= 5) {
             //você ganhou!
             mostrarResultado("Parabéns, você conseguiu pousar o módulo lunar com segurança!🎉🥳🎉", cor = "#1ca700");
@@ -287,14 +309,14 @@ function atracaoGravitacional() {
     moduloLunar.velocidade.y += gravidade;
 
     if (moduloLunar.rotacaoHorario) {
-        moduloLunar.angulo += Math.PI / 180;
+        moduloLunar.angulo += Math.PI / 160 ;
     } else if (moduloLunar.rotacaoAntiHorario) {
-        moduloLunar.angulo -= Math.PI / 180;
+        moduloLunar.angulo -= Math.PI / 160;
     }
 
     if (moduloLunar.motorLigado) {
-        moduloLunar.velocidade.y -= 0.0125 * Math.cos(moduloLunar.angulo);
-        moduloLunar.velocidade.x += 0.0125 * Math.sin(moduloLunar.angulo);
+        moduloLunar.velocidade.y -= 0.0225 * Math.cos(moduloLunar.angulo);
+        moduloLunar.velocidade.x += 0.0225 * Math.sin(moduloLunar.angulo);
     }
 }
 
