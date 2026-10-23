@@ -47,7 +47,7 @@ let moduloLunar = {
         y: 0
     },
     motorLigado: false,
-    combustivel: lancamento ? 1000 : 900,
+    combustivel: lancamento ? 1000 : 800,
     rotacaoAntiHorario: false,
     rotacaoHorario: false
 }
